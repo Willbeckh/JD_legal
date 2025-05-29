@@ -1,0 +1,79 @@
+{
+  "info": {
+    "_postman_id": "1e01f36a-fbaf-41b4-b3b7-123456789000",
+    "name": "Transcription API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "http://localhost:8000/api/users/register/", "protocol": "http", "host": ["localhost:8000"], "path": ["api", "users", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"client@example.com\",\n    \"password\": \"testpass123\",\n    \"role\": \"client\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": { "raw": "http://localhost:8000/api/users/login/", "protocol": "http", "host": ["localhost:8000"], "path": ["api", "users", "login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"client@example.com\",\n    \"password\": \"testpass123\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Me (Profile)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Token <your-token>", "type": "text" }],
+        "url": { "raw": "http://localhost:8000/api/users/me/", "protocol": "http", "host": ["localhost:8000"], "path": ["api", "users", "me"] }
+      }
+    },
+    {
+      "name": "Create Project (Client)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Token <client-token>", "type": "text" }],
+        "url": { "raw": "http://localhost:8000/api/projects/create/", "protocol": "http", "host": ["localhost:8000"], "path": ["api", "projects", "create"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"title\": \"Sample Audio\",\n    \"description\": \"Simple test\",\n    \"audio_link\": \"https://example.com/audio.mp3\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Upload Transcript (Transcriber)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Token <transcriber-token>", "type": "text" },
+          { "key": "Content-Type", "value": "multipart/form-data", "type": "text" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "project", "value": "1", "type": "text" },
+            { "key": "file", "type": "file", "src": "" }
+          ]
+        },
+        "url": { "raw": "http://localhost:8000/api/transcripts/upload/", "protocol": "http", "host": ["localhost:8000"], "path": ["api", "transcripts", "upload"] }
+      }
+    },
+    {
+      "name": "List Project Transcripts",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Token <your-token>", "type": "text" }],
+        "url": { "raw": "http://localhost:8000/api/transcripts/1/", "protocol": "http", "host": ["localhost:8000"], "path": ["api", "transcripts", "1"] }
+      }
+    }
+  ]
+}
