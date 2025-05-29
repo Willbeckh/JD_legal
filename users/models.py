@@ -4,7 +4,6 @@ from django.db import models
 # Create your models here.
 class User(AbstractUser):
     ROLE_CHOICES = [
-        ('client', 'Client'),
         ('transcriber', 'Transcriber'),
         ('proofreader', "Proofreader"),
         ('admin', 'Admin')
