@@ -20,6 +20,7 @@ from .views import welcome_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('root/', welcome_view, name='root'),
+    path('', welcome_view, name='root'),
     path('api/users/', include('users.urls')),
+    path('api/', include('scriptapp.urls'))
 ]
