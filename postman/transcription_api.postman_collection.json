@@ -1,0 +1,187 @@
+{
+  "info": {
+    "name": "Transcription API",
+    "_postman_id": "a01b3fbc-c123-47e9-bd00-123456789abc",
+    "description": "MVP Transcription API for role-based task assignment",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "login"]
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8000/api/users/register/",
+              "protocol": "http",
+              "host": ["localhost:8000"],
+              "path": ["api", "users", "register"]
+            },
+            "body": {
+              "mode": "application/json",
+              "raw": "{\n    \"username\": \"Doe\",\n    \"email\": \"doe@example.com\",\n    \"password\": \"testpass123\",\n    \"role\": \"client\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create Project (Manual Assign)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Project Manual\",\n  \"description\": \"Manual test\",\n  \"audio_link\": \"https://example.com/audio1.mp3\",\n  \"transcriber_id\": 2,\n  \"proofreader_id\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/projects/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "create"]
+            }
+          }
+        },
+        {
+          "name": "Create Project (Auto Assign)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{access_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Project Auto\",\n  \"description\": \"Auto assignment\",\n  \"audio_link\": \"https://example.com/audio2.mp3\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/projects/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "create"]
+            }
+          }
+        },
+        {
+          "name": "List Projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/projects/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "List My Assignments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/assignments/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "assignments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transcripts",
+      "item": [
+        {
+          "name": "Upload Transcript",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Token {{access_token}}" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "assignment_id", "value": "1", "type": "text" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transcripts/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transcripts"]
+            }
+          }
+        },
+        {
+          "name": "List All Transcripts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Token {{access_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transcripts/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transcripts"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "access_token", "value": "" }
+  ]
+}
