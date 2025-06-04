@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
 from rest_framework.authtoken.models import Token
+from .permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, UserListSerializer, UserUpdateSerializer
 
@@ -32,10 +33,6 @@ class MeView(APIView):
         return Response(UserSerializer(request.user).data)
 
 
-class IsAdmin(permissions.BasePermission):
-    def has_permission(self, request, view):
-        return request.user and request.user.role == 'admin'
-
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserListSerializer
@@ -49,16 +46,18 @@ class UserUpdateView(generics.UpdateAPIView):
     lookup_field = 'id'
     
     
-class UserDeactivateView(generics.DestroyAPIView):
+class UserDeleteView(generics.DestroyAPIView):
     queryset = User.objects.all()
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
     lookup_field = 'id'
 
     def perform_destroy(self, instance):
         instance.is_active = False
-        instance.save()
+        instance.delete()
 
     def delete(self, request, *args, **kwargs):
         user = self.get_object()
+            
+            
         self.perform_destroy(user)
-        return Response({"detail": "User deactivated."}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "User deleted."}, status=status.HTTP_204_NO_CONTENT)
