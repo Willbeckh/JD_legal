@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     # custom apps
     'users',
-    'scriptapp'
+    'scriptapp',
+    'core'
 ]
 
 AUTH_USER_MODEL = 'users.User'

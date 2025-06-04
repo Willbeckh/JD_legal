@@ -1,12 +1,12 @@
+from .models import User
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics, permissions
 from rest_framework.authtoken.models import Token
+from .permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
-
-from .models import User
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, UserListSerializer, UserUpdateSerializer
 
 class RegisterView(APIView):
     def post(self, request):
@@ -31,3 +31,33 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserListSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+
+class UserUpdateView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
+    
+    
+class UserDeleteView(generics.DestroyAPIView):
+    queryset = User.objects.all()
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    lookup_field = 'id'
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.delete()
+
+    def delete(self, request, *args, **kwargs):
+        user = self.get_object()
+            
+            
+        self.perform_destroy(user)
+        return Response({"detail": "User deleted."}, status=status.HTTP_204_NO_CONTENT)

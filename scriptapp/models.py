@@ -20,3 +20,15 @@ class Transcript(models.Model):
 
     def __str__(self):
         return f"{self.project.title} - {self.role}"
+
+
+class Assignment(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20)
+
+    class Meta: 
+        unique_together = ('project', 'user', 'role')
+
+    def __str__(self):
+        return f"{self.user.email} -- {self.role} for {self.project.title}"
