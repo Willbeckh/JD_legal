@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'transcription.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-print('MODE: ', os.getenv('DJANGO_ENV'))
+print('DJANGO_ENV: ', os.getenv('DJANGO_ENV'))
 
 if os.getenv('DJANGO_ENV') == 'dev':
     DATABASES = {
