@@ -27,3 +27,24 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role']
+
+class UserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'is_active']
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Admin only: can update a user's role or activation status.
+    """
+    class Meta:
+        model = User
+        fields = ['role', 'is_active']
+        extra_kwargs = {
+            'role': {'required': False},
+            'is_active': {'required': False},
+        }
+        
+        
+    
