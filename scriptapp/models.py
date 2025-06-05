@@ -7,11 +7,24 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     file_link = models.URLField()
     admin = models.ForeignKey(
-        User, on_delete=models.CASCADE, limit_choices_to={'role': 'admin'})
+        User, on_delete=models.CASCADE, limit_choices_to={"role": "admin"}
+    )
     transcriber = models.ForeignKey(
-        User, on_delete=models.CASCADE, null=True, blank=True, limit_choices_to={'role': 'transcriber'}, related_name="transcribed_projects")
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        limit_choices_to={"role": "transcriber"},
+        related_name="transcribed_projects",
+    )
     proofreader = models.ForeignKey(
-        User, on_delete=models.CASCADE, null=True, blank=True, limit_choices_to={'role': 'proofreader'}, related_name="proofread_projects")
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        limit_choices_to={"role": "proofreader"},
+        related_name="proofread_projects",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     is_archived = models.BooleanField(default=False)
 
@@ -21,10 +34,12 @@ class Project(models.Model):
 
 class Transcript(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='transcripts/')
+    file = models.FileField(upload_to="transcripts/")
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    role = models.CharField(max_length=20, choices=[('transcriber', 'Transcriber'), (
-        'proofreader', 'Proofreader')])  # 'transcriber' or 'proofreader'
+    role = models.CharField(
+        max_length=20,
+        choices=[("transcriber", "Transcriber"), ("proofreader", "Proofreader")],
+    )  # 'transcriber' or 'proofreader'
     uploaded_at = models.DateTimeField(auto_now_add=True)
     is_final = models.BooleanField(default=False)
 
@@ -32,9 +47,7 @@ class Transcript(models.Model):
         """Ensures only one 'final' transcript per project-role pair."""
         if self.is_final:
             Transcript.objects.filter(
-                project=self.project,
-                role=self.role,
-                is_final=True
+                project=self.project, role=self.role, is_final=True
             ).exclude(id=self.id).update(is_final=False)
         super().save(*args, **kwargs)
 
@@ -48,7 +61,7 @@ class Assignment(models.Model):
     role = models.CharField(max_length=20)
 
     class Meta:
-        unique_together = ('project', 'user', 'role')
+        unique_together = ("project", "user", "role")
 
     def __str__(self):
         return f"{self.user.email} -- {self.role} for {self.project.title}"
