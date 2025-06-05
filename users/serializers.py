@@ -1,6 +1,18 @@
 from rest_framework import serializers
 from .models import User
 from django.contrib.auth import authenticate
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # Add custom claims
+        token["username"] = user.username
+        token["role"] = user.role
+        return token
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -45,6 +57,3 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'role': {'required': False},
             'is_active': {'required': False},
         }
-        
-        
-    
