@@ -1,8 +1,10 @@
 from .models import User
+from django.http import Http404
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
+from rest_framework.exceptions import NotFound, ValidationError
 from .permissions import IsAdmin
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
@@ -26,8 +28,8 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             # token = Token.objects.create(user=user)
-            return Response({"user": UserSerializer(user).data}, status=201)
-        return Response(serializer.errors, status=400)
+            return Response({"user": UserSerializer(user).data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MeView(APIView):
@@ -42,8 +44,12 @@ class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+
+        refresh_token = request.data["refresh"]
+        if not refresh_token:
+            raise ValidationError({"refresh": "Refresh token is required."})
+
         try:
-            refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response(
@@ -80,7 +86,10 @@ class UserDeleteView(generics.DestroyAPIView):
         instance.delete()
 
     def delete(self, request, *args, **kwargs):
-        user = self.get_object()
+        try:
+            user = self.get_object()
+        except Http404:
+            raise NotFound("The user with specified ID does not exist")
 
         self.perform_destroy(user)
         return Response({"detail": "User deleted."}, status=status.HTTP_204_NO_CONTENT)
