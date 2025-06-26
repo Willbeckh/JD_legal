@@ -1,14 +1,18 @@
-# Dockerfile
-FROM python:3.13-slim
+FROM python:3.13.5-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY requirements.txt /app/
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install system packages
+RUN apt-get update && apt-get install -y libpq5 && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app/
 
-CMD [ "gunicorn", "jd_api.wsgi:application", "--bind", "0.0.0.0:8000" ]
+EXPOSE 8000
+
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && gunicorn transcription.wsgi:application --bind 0.0.0.0:8000"]
