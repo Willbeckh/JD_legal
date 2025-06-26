@@ -1,5 +1,7 @@
+from django.http import Http404
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework import status, generics, permissions
 from users.models import User
 from core.utils import get_next_user
@@ -23,26 +25,29 @@ class ProjectCreateView(generics.CreateAPIView):
         validated_data = serializer.validated_data
         project = serializer.save(admin=self.request.user)
 
-        # chck for provided transcriber-id/proofreader_id
-        transcriber = None
-        proofreader = None
-
         transcriber_id = validated_data.pop("transcriber_id", None)
         proofreader_id = validated_data.pop("proofreader_id", None)
 
-        # manual assignment if provided, else, fallback to round-robin
+        # *UPDATES
+        # assign transcriber
+        transcriber = None
         if transcriber_id:
             transcriber = User.objects.filter(
                 id=transcriber_id, role="transcriber"
             ).first()
+            if not transcriber:
+                raise ValidationError({"transcriber": ["Invalid transcriber ID"]})
         else:
             transcriber = get_next_user("transcriber")
 
-        # get proofreader
+        # Assign proofreader
+        proofreader = None
         if proofreader_id:
             proofreader = User.objects.filter(
                 id=proofreader_id, role="proofreader"
             ).first()
+            if not proofreader:
+                raise ValidationError({"proofreader": "Invalid proofreader ID"})
         else:
             proofreader = get_next_user("proofreader")
 
@@ -64,7 +69,9 @@ class ClientProjectListView(generics.ListAPIView):
         user = self.request.user
         if user.role == "admin":
             return Project.objects.filter(admin=user)
-        return Project.objects.none()  # Prevent non-admin access
+        raise PermissionDenied(
+            "You do not have permission to access this resource."
+        )  # Prevent non-admin access
 
 
 class TranscriptUploadView(generics.CreateAPIView):
@@ -84,6 +91,8 @@ class TranscriptListView(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs["project_id"]
+        if not Project.objects.filter(id=project_id).exist():
+            raise NotFound("Project not found.")
         return Transcript.objects.filter(project__id=project_id)
 
 
@@ -125,7 +134,11 @@ class ProjectDeleteView(generics.DestroyAPIView):
         instance.save()
 
     def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+        except Http404:
+            raise NotFound("Project not found.")
+
         self.perform_destroy(instance)
         return Response(
             {"detail": "Project archived."}, status=status.HTTP_204_NO_CONTENT
@@ -144,7 +157,7 @@ class AssignedProjectListView(generics.ListAPIView):
             return Project.objects.filter(proofreader=user, is_archived=False)
         elif user.role == "admin":
             return Project.objects.filter(is_archived=False)
-        return Project.objects.none()
+        raise PermissionDenied("You do not have permission to access this resource.")
 
 
 class MarkTranscriptFinalView(APIView):
@@ -154,13 +167,11 @@ class MarkTranscriptFinalView(APIView):
         transcript = get_object_or_404(Transcript, id=transcript_id)
 
         if request.user.role != "admin":
-            return Response(
-                {"detail": "Only admins can mark final transcripts."}, status=403
-            )
+            raise PermissionDenied("Only admins can mark final transcripts.")
 
         transcript.is_final = True
         transcript.save()
-        return Response({"detail": "Transcript marked as final."}, status=200)
+        return Response({"detail": "Transcript marked as final."}, status=status.HTTP_200_OK)
 
 
 class FinalTranscriptListView(generics.ListAPIView):
@@ -168,5 +179,7 @@ class FinalTranscriptListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        project_id = self.kwargs["project_id"]
+        project_id = self.kwargs.get("project_id")
+        if not Project.objects.filter(id=project_id).exists():
+            raise NotFound("Project not found.")
         return Transcript.objects.filter(project__id=project_id, is_final=True)
