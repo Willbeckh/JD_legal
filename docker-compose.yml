@@ -1,29 +1,33 @@
-version: "3.9"
-
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn transcription.wsgi:application --bind 0.0.0.0:8000
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - .:/app
+      - static_volume:/app/staticfiles
       - media_volume:/app/media
     env_file:
       - .env
-    environment:
+    depends_on:
       - db
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
 
   db:
     image: postgres:15
-    volumes:
-      - db_volume:/var/lib/postgresql/data
+    restart: always
     environment:
+      POSTGRES_DB: mydb
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
+    volumes:
+      - db_volume:/var/lib/postgresql/data
 
 volumes:
   db_volume:
   media_volume:
-  postgres_data:
+  static_volume:
