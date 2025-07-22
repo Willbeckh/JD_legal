@@ -19,7 +19,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'role']
+        fields = ["username", "email", "password", "role"]
 
     def create(self, validated_data):
         password = validated_data.pop("password")
@@ -27,6 +27,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -36,29 +37,34 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(**data)
         if user and user.is_active:
             return user
-        raise serializers.ValidationError({"non_field_errors": ["Invalid username or password"]})
+        raise serializers.ValidationError(
+            {"non_field_errors": ["Invalid username or password"]}
+        )
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'is_active']
+        fields = ["id", "username", "email", "role", "is_active"]
+
 
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'is_active']
+        fields = ["id", "username", "email", "role", "is_active"]
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     """
     Admin only: can update a user's role or activation status.
     """
+
     class Meta:
         model = User
-        fields = ['role', 'is_active']
+        fields = ["role", "is_active"]
         extra_kwargs = {
-            'role': {'required': False},
-            'is_active': {'required': False},
+            "role": {"required": False},
+            "is_active": {"required": False},
         }
 
     def update(self, instance, validated_data):

@@ -8,7 +8,12 @@ from core.utils import get_next_user
 from users.permissions import IsAdmin
 from rest_framework.response import Response
 from django.core.exceptions import PermissionDenied
-from .models import Project, Transcript, Assignment
+from django.db.models import Sum  # Import Sum for aggregation
+from .models import (
+    Project,
+    Transcript,
+    Assignment,
+)  # Ensure Assignment and Project models are correctly imported
 from .serializers import (
     AssignmentSerializer,
     ProjectSerializer,
@@ -28,8 +33,7 @@ class ProjectCreateView(generics.CreateAPIView):
         transcriber_id = validated_data.pop("transcriber_id", None)
         proofreader_id = validated_data.pop("proofreader_id", None)
 
-        # *UPDATES
-        # assign transcriber
+        # Assign transcriber
         transcriber = None
         if transcriber_id:
             transcriber = User.objects.filter(
@@ -68,10 +72,14 @@ class ClientProjectListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == "admin":
-            return Project.objects.filter(admin=user)
-        raise PermissionDenied(
-            "You do not have permission to access this resource."
-        )  # Prevent non-admin access
+            # Admins see projects they created
+            return Project.objects.filter(admin=user, is_archived=False)
+        # Non-admins (clients) should potentially see projects they "own" if `Project` has a client field
+        # or if `Assignment` defines client roles. Based on the current setup, it seems only admins create projects.
+        # If a client can also be an admin, this would be fine. If 'client' is a separate role,
+        # you'd need to define how clients are linked to projects.
+        # For now, it raises PermissionDenied for non-admins as per your original code.
+        raise PermissionDenied("You do not have permission to access this resource.")
 
 
 class TranscriptUploadView(generics.CreateAPIView):
@@ -91,8 +99,10 @@ class TranscriptListView(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs["project_id"]
-        if not Project.objects.filter(id=project_id).exist():
+        # Fix: use .exists() instead of .exist()
+        if not Project.objects.filter(id=project_id).exists():
             raise NotFound("Project not found.")
+        # Filter transcripts belonging to the specified project
         return Transcript.objects.filter(project__id=project_id)
 
 
@@ -151,11 +161,22 @@ class AssignedProjectListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        # Filter projects based on assignments
+        # Use Assignment model to link users to projects by role
         if user.role == "transcriber":
-            return Project.objects.filter(transcriber=user, is_archived=False)
+            return Project.objects.filter(
+                assignments__user=user,
+                assignments__role="transcriber",
+                is_archived=False,
+            ).distinct()  # Use distinct to avoid duplicate projects if a project has multiple assignments for the same user (unlikely but good practice)
         elif user.role == "proofreader":
-            return Project.objects.filter(proofreader=user, is_archived=False)
+            return Project.objects.filter(
+                assignments__user=user,
+                assignments__role="proofreader",
+                is_archived=False,
+            ).distinct()
         elif user.role == "admin":
+            # Admins can see all unarchived projects
             return Project.objects.filter(is_archived=False)
         raise PermissionDenied("You do not have permission to access this resource.")
 
@@ -171,7 +192,9 @@ class MarkTranscriptFinalView(APIView):
 
         transcript.is_final = True
         transcript.save()
-        return Response({"detail": "Transcript marked as final."}, status=status.HTTP_200_OK)
+        return Response(
+            {"detail": "Transcript marked as final."}, status=status.HTTP_200_OK
+        )
 
 
 class FinalTranscriptListView(generics.ListAPIView):
@@ -183,3 +206,64 @@ class FinalTranscriptListView(generics.ListAPIView):
         if not Project.objects.filter(id=project_id).exists():
             raise NotFound("Project not found.")
         return Transcript.objects.filter(project__id=project_id, is_final=True)
+
+
+class UserSummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        total_tasks = 0  # Define default
+        total_revenue = 0.0  # Define default as float for easier calculation
+
+        # Calculate total tasks (e.g., total assignments for the user)
+        # Assuming an 'Assignment' means a 'task' for the user
+        total_tasks = Assignment.objects.filter(user=user).count()
+
+        # Calculate revenue based on FINALIZED Transcripts uploaded by the user
+        if user.role == "transcriber":
+            # Sum price of final transcripts uploaded by this transcriber
+            revenue_sum_data = Transcript.objects.filter(
+                uploaded_by=user, role="transcriber", is_final=True
+            ).aggregate(total_price=Sum("price"))
+
+            total_revenue = (
+                revenue_sum_data["total_price"]
+                if revenue_sum_data["total_price"] is not None
+                else 0.0
+            )
+
+        elif user.role == "proofreader":
+            # Sum price of final transcripts uploaded by this proofreader
+            revenue_sum_data = Transcript.objects.filter(
+                uploaded_by=user, role="proofreader", is_final=True
+            ).aggregate(total_price=Sum("price"))
+
+            total_revenue = (
+                revenue_sum_data["total_price"]
+                if revenue_sum_data["total_price"] is not None
+                else 0.0
+            )
+
+        elif user.role == "admin":
+            # Admin can see total revenue from all final transcripts
+            revenue_sum_data = Transcript.objects.filter(is_final=True).aggregate(
+                total_price=Sum("price")
+            )
+
+            total_revenue = (
+                revenue_sum_data["total_price"]
+                if revenue_sum_data["total_price"] is not None
+                else 0.0
+            )
+
+        return Response(
+            {
+                "total_tasks": total_tasks,
+                "total_revenue": float(
+                    total_revenue
+                ),  # Ensure it's a float for JSON serialization
+                "activity_summary": "Your recent activity includes completing tasks and earning revenue.",
+            },
+            status=status.HTTP_200_OK,
+        )
