@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class ScriptappConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'scriptapp'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "scriptapp"

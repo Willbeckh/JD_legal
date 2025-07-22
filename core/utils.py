@@ -3,20 +3,21 @@ from users.models import User
 from core.models import SiteSetting
 
 # Define allowed roles
-AllowedRole = Literal['transcriber', 'proofreader']
+AllowedRole = Literal["transcriber", "proofreader"]
+
 
 def get_next_user(role: AllowedRole) -> Optional[User]:
     # Only fetch user IDs - (less memory)
     user_ids = list(
         User.objects.filter(role=role, is_active=True)
-        .order_by('id')
-        .values_list('id', flat=True)
+        .order_by("id")
+        .values_list("id", flat=True)
     )
 
     if not user_ids:
         return None
 
-    setting_key = f'last_{role}_id'
+    setting_key = f"last_{role}_id"
     setting = SiteSetting.objects.filter(key=setting_key).first()
 
     try:
@@ -33,8 +34,7 @@ def get_next_user(role: AllowedRole) -> Optional[User]:
 
     # Save this ID as the last assigned
     SiteSetting.objects.update_or_create(
-        key=setting_key,
-        defaults={'value': str(next_user_id)}
+        key=setting_key, defaults={"value": str(next_user_id)}
     )
 
     return User.objects.get(id=next_user_id)

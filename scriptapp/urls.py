@@ -11,6 +11,7 @@ from .views import (
     ProjectUpdateView,
     TranscriptUploadView,
     TranscriptListView,
+    UserSummaryView,
 )
 
 urlpatterns = [
@@ -41,4 +42,5 @@ urlpatterns = [
         "assignments/create/", AssignmentCreateView.as_view(), name="assignment-create"
     ),
     path("assigned/", AssignedProjectListView.as_view(), name="assigned-projects"),
+    path("summary/", UserSummaryView.as_view(), name="user-summary"),
 ]

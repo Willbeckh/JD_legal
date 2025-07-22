@@ -4,6 +4,7 @@ cffi==1.17.1
 click==8.2.1
 colorama==0.4.6
 cryptography==45.0.3
+dj-database-url==3.0.1
 Django==5.2.1
 django-cors-headers==4.7.0
 djangorestframework==3.16.0
